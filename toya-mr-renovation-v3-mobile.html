@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Toya v3 — Mobile</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F4F1;--surface:#fff;--s2:#FAFAF8;
+  --t1:#1C1C1E;--t2:#6E6E73;--t3:#AEAEB2;
+  --sep:rgba(60,60,67,.08);
+  --mint:#34A99E;--mint-s:#EAF6F5;
+  --blue:#4A6FA5;--blue-s:#EBF0F8;
+  --rose:#D94F4F;--rose-s:#FCEAEA;
+  --amber:#C07830;--amber-s:#FDF2E7;
+  --sage:#3A8558;--sage-s:#E8F5EE;
+  --warm:#C4A97D;--warm-s:#F7F1E8;
+  --sh:0 2px 8px rgba(0,0,0,.06);
+  --f:-apple-system,'Helvetica Neue','Inter',sans-serif;
+}
+html,body{height:100%;width:100%}
+body{font-family:var(--f);background:var(--bg);color:var(--t1);display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+.bar{
+  background:#fff;
+  border-bottom:1px solid var(--sep);
+  height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 16px;
+  flex-shrink:0;
+}
+.logo{font-size:14px;font-weight:700;letter-spacing:-.03em}
+.bar-r{display:flex;align-items:center;gap:8px}
+.av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--warm),#a07040);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+.sub{
+  background:#fff;
+  border-bottom:1px solid var(--sep);
+  padding:10px 16px;
+  flex-shrink:0;
+  font-size:11px;
+  color:var(--t2);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.scroll-area{
+  flex:1;
+  overflow-y:auto;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* projects section */
+.projects-header{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--t3);
+  margin-bottom:6px;
+  padding:0 4px;
+}
+.projects-scroll{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:8px 0;
+  -webkit-overflow-scrolling:touch;
+}
+.projects-scroll::-webkit-scrollbar{height:3px}
+.projects-scroll::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:2px}
+
+.project-chip{
+  flex-shrink:0;
+  padding:8px 12px;
+  border-radius:20px;
+  background:var(--s2);
+  border:1.5px solid transparent;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:600;
+  color:var(--t1);
+  transition:all .15s;
+  white-space:nowrap;
+  -webkit-touch-callout:none;
+}
+.project-chip:active{opacity:.7}
+.project-chip.active{
+  background:var(--warm-s);
+  border-color:var(--warm);
+  color:var(--warm);
+}
+
+/* signals section */
+.signals-section{
+  background:var(--surface);
+  border-radius:10px;
+  box-shadow:var(--sh);
+  padding:14px 12px;
+}
+.section-label{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--t3);
+  margin-bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--sep)}
+
+/* signal card */
+.signal{
+  margin-bottom:8px;
+  padding:11px 12px;
+  border-radius:8px;
+  background:var(--s2);
+  border-left:3px solid;
+  cursor:pointer;
+  transition:all .15s;
+  -webkit-touch-callout:none;
+}
+.signal:active{opacity:.8}
+.signal.risk{border-left-color:var(--rose);background:var(--rose-s)}
+.signal.waiting{border-left-color:var(--amber);background:var(--amber-s)}
+.signal.ok{border-left-color:var(--sage);background:var(--sage-s)}
+.signal.info{border-left-color:var(--blue);background:var(--blue-s)}
+
+.signal-text{font-size:12.5px;line-height:1.5;color:var(--t1);margin-bottom:6px}
+.signal-tags{display:flex;gap:4px;flex-wrap:wrap}
+.tag{
+  font-size:9px;
+  font-weight:700;
+  padding:2px 7px;
+  border-radius:12px;
+  background:#fff;
+}
+.tag-risk{color:var(--rose)}
+.tag-wait{color:var(--amber)}
+.tag-done{color:var(--sage)}
+.tag-info{color:var(--blue)}
+.tag-src{color:var(--warm)}
+
+.signal-meta{
+  font-size:10px;
+  color:var(--t2);
+  margin-top:6px;
+}
+
+/* detail panel (slides up) */
+.detail-panel{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:var(--surface);
+  border-radius:16px 16px 0 0;
+  box-shadow:0 -4px 20px rgba(0,0,0,.15);
+  max-height:60vh;
+  overflow-y:auto;
+  z-index:100;
+  display:none;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  padding:20px 16px 16px;
+}
+.detail-panel.active{
+  display:flex;
+  flex-direction:column;
+  transform:translateY(0);
+}
+
+.detail-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--sep);
+}
+.detail-title{font-size:14px;font-weight:700;color:var(--t1)}
+.close-btn{
+  width:24px;
+  height:24px;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  font-size:18px;
+  color:var(--t2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  -webkit-touch-callout:none;
+}
+
+.thread-card{
+  margin-bottom:12px;
+  padding:11px 12px;
+  background:var(--s2);
+  border-radius:8px;
+}
+.thread-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+}
+.thread-who{font-size:12px;font-weight:600;color:var(--t1)}
+.thread-platform{
+  font-size:9px;
+  font-weight:600;
+  padding:2px 6px;
+  border-radius:12px;
+  background:#fff;
+}
+.plt-line-off{color:#2E7D5A}
+.plt-line-per{color:#B06A18}
+
+.fact{
+  display:flex;
+  gap:7px;
+  margin-bottom:6px;
+  font-size:12px;
+}
+.fact:last-child{margin-bottom:0}
+.fact-icon{flex-shrink:0;font-size:13px}
+.fact-body{flex:1;min-width:0}
+.fact-label{
+  font-size:9px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+  color:var(--t3);
+  margin-bottom:1px;
+}
+.fact-text{color:var(--t1);line-height:1.4}
+.fact-text.muted{color:var(--t2)}
+.fact-text.alert{color:var(--rose);font-weight:500}
+
+.empty{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:40vh;
+  color:var(--t3);
+  font-size:13px;
+  text-align:center;
+}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.09)}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="logo">toya</div>
+  <div class="bar-r">
+    <span style="font-size:11px;color:var(--t2)">翻修先生</span>
+    <div class="av">雨</div>
+  </div>
+</div>
+
+<div class="sub">
+  <span id="date-text">2026年4月15日</span>
+  <span>2 分鐘前更新</span>
+</div>
+
+<div class="scroll-area">
+
+  <!-- PROJECTS -->
+  <div>
+    <div class="projects-header">進行中的案子</div>
+    <div class="projects-scroll" id="projects-scroll"></div>
+  </div>
+
+  <!-- SIGNALS -->
+  <div class="signals-section">
+    <div class="section-label">需要注意</div>
+    <div id="signals-list"></div>
+  </div>
+
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <div class="detail-title" id="detail-title"></div>
+    <button class="close-btn" onclick="closeDetail()">✕</button>
+  </div>
+  <div id="detail-threads"></div>
+</div>
+
+<script>
+const projects = [
+  {
+    id: 1,
+    name: "林宅全室翻修",
+    client: "林小姐",
+    status: "active",
+    signals: [
+      {
+        type: "risk",
+        text: "林小姐尚未確認木地板材質選擇。水電師傅週五進場，若今天未回覆，估料將延誤。",
+        tags: ["待回覆", "時間壓力"],
+        source: "LINE 官方",
+        time: "昨天"
+      },
+      {
+        type: "ok",
+        text: "陳師傅（水電）已確認週五上午九點進場，現場設計師同步出席。",
+        tags: ["已確認"],
+        source: "LINE 個人",
+        time: "2天前"
+      },
+      {
+        type: "info",
+        text: "設計師 Mia 已完成兩版隔間牆方案。方案 B 已選定（客廳較大），待木地板確認後出正式工程圖。",
+        tags: ["決定已定", "待下一步"],
+        source: "LINE 個人",
+        time: "3天前"
+      }
+    ],
+    threads: [
+      {
+        who: "林小姐",
+        platform: "LINE 官方",
+        platformClass: "plt-line-off",
+        facts: [
+          { icon: "📋", label: "上次確認", text: "樣品目錄已傳送（4月13日），含三款耐磨木地板選項" },
+          { icon: "⏳", label: "等待中", text: "木地板材質選擇，昨天預計回覆，尚無消息", textClass: "alert" },
+          { icon: "📅", label: "截止壓力", text: "週五水電進場，若未確認將影響估料時間", textClass: "alert" }
+        ]
+      },
+      {
+        who: "陳師傅（水電）",
+        platform: "LINE 個人",
+        platformClass: "plt-line-per",
+        facts: [
+          { icon: "✅", label: "已確認", text: "週五上午九點進場，台中市北區林宅" },
+          { icon: "📌", label: "待確認", text: "管線走法需現場確認後決定", textClass: "muted" }
+        ]
+      },
+      {
+        who: "設計師 Mia",
+        platform: "LINE 個人",
+        platformClass: "plt-line-per",
+        facts: [
+          { icon: "✅", label: "已決定", text: "方案 B 隔間牆（客廳較寬）" },
+          { icon: "⏳", label: "等待中", text: "正式工程圖待木地板確認後繪製", textClass: "muted" }
+        ]
+      }
+    ]
+  },
+  {
+    id: 2,
+    name: "陳宅廚房改造",
+    client: "陳先生",
+    status: "pending",
+    signals: [
+      {
+        type: "risk",
+        text: "報價單於3月25日傳送（35–42萬元），陳先生三週未回應。4月8日跟進訊息亦無回覆。",
+        tags: ["長時間無回應", "可能流失"],
+        source: "LINE 官方",
+        time: "3週前"
+      },
+      {
+        type: "waiting",
+        text: "木工王師傅已暫時保留四月底檔期，但若五月才確認，師傅時間可能不夠。",
+        tags: ["包商期程壓力"],
+        source: "LINE 個人",
+        time: "3週前"
+      }
+    ],
+    threads: [
+      {
+        who: "陳先生",
+        platform: "LINE 官方",
+        platformClass: "plt-line-off",
+        facts: [
+          { icon: "📋", label: "報價已傳", text: "廚房改造 35–42萬，3月25日傳送" },
+          { icon: "⚠️", label: "無回應", text: "已發送兩次跟進訊息，三週未獲回覆", textClass: "alert" }
+        ]
+      },
+      {
+        who: "王師傅（木工）",
+        platform: "LINE 個人",
+        platformClass: "plt-line-per",
+        facts: [
+          { icon: "📅", label: "暫保檔期", text: "四月底，確認後通知師傅" },
+          { icon: "⚠️", label: "注意", text: "五月以後師傅時間不確定", textClass: "alert" }
+        ]
+      }
+    ]
+  },
+  {
+    id: 3,
+    name: "張宅浴室翻新",
+    client: "張太太",
+    status: "active",
+    signals: [
+      {
+        type: "ok",
+        text: "磁磚師傅（李師傅）已進場，預計本週五完工。客戶已確認四月底交屋。",
+        tags: ["施工中", "進度正常"],
+        source: "LINE 官方",
+        time: "4天前"
+      },
+      {
+        type: "info",
+        text: "衛浴設備下週一安裝，週三試水，無問題即完工。張太太已知情並確認。",
+        tags: ["已確認"],
+        source: "LINE 官方",
+        time: "4天前"
+      }
+    ],
+    threads: [
+      {
+        who: "張太太",
+        platform: "LINE 官方",
+        platformClass: "plt-line-off",
+        facts: [
+          { icon: "✅", label: "確認完工日", text: "四月底，客戶已同意" },
+          { icon: "📋", label: "施工進度", text: "磁磚貼完→週一安裝衛浴→週三試水" }
+        ]
+      },
+      {
+        who: "李師傅（泥作）",
+        platform: "LINE 個人",
+        platformClass: "plt-line-per",
+        facts: [
+          { icon: "✅", label: "已進場", text: "4月11日，預計週五完成磁磚" },
+          { icon: "📌", label: "無待辦", text: "按計畫進行", textClass: "muted" }
+        ]
+      }
+    ]
+  }
+];
+
+let activeProjectId = 1;
+
+function tagClass(label) {
+  const map = {
+    "待回覆": "tag-wait", "時間壓力": "tag-risk", "已確認": "tag-done",
+    "決定已定": "tag-done", "待下一步": "tag-info", "長時間無回應": "tag-risk",
+    "可能流失": "tag-risk", "包商期程壓力": "tag-wait", "施工中": "tag-done",
+    "進度正常": "tag-done", "保固案件": "tag-info", "已安排處理": "tag-done"
+  };
+  return map[label] || "tag-info";
+}
+
+function renderProjects() {
+  const el = document.getElementById("projects-scroll");
+  el.innerHTML = projects.map(p => `
+    <div class="project-chip ${p.id === activeProjectId ? 'active' : ''}" onclick="selectProject(${p.id})">
+      ${p.name}
+    </div>
+  `).join("");
+}
+
+function renderSignals() {
+  const project = projects.find(p => p.id === activeProjectId);
+  const el = document.getElementById("signals-list");
+
+  if(!project) {
+    el.innerHTML = '<div class="empty">沒有訊號</div>';
+    return;
+  }
+
+  el.innerHTML = project.signals.map(s => {
+    const tagsHtml = s.tags.map(t => `<span class="tag ${tagClass(t)}">${t}</span>`).join("");
+    return `
+      <div class="signal ${s.type}" onclick="openDetail(${project.id})">
+        <div class="signal-text">${s.text}</div>
+        <div class="signal-tags">${tagsHtml}</div>
+        <div class="signal-meta">
+          <span class="tag tag-src">${s.source}</span> · ${s.time}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function selectProject(id) {
+  activeProjectId = id;
+  renderProjects();
+  renderSignals();
+  closeDetail();
+}
+
+function openDetail(projectId) {
+  const project = projects.find(p => p.id === projectId);
+  if(!project) return;
+
+  document.getElementById("detail-title").textContent = project.name;
+
+  const threadsEl = document.getElementById("detail-threads");
+  threadsEl.innerHTML = project.threads.map(t => {
+    const factsHtml = t.facts.map(f => `
+      <div class="fact">
+        <div class="fact-icon">${f.icon}</div>
+        <div class="fact-body">
+          <div class="fact-label">${f.label}</div>
+          <div class="fact-text ${f.textClass || ''}">${f.text}</div>
+        </div>
+      </div>
+    `).join("");
+
+    return `
+      <div class="thread-card">
+        <div class="thread-head">
+          <span class="thread-who">${t.who}</span>
+          <span class="thread-platform ${t.platformClass}">${t.platform}</span>
+        </div>
+        ${factsHtml}
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("detail-panel").classList.add("active");
+}
+
+function closeDetail() {
+  document.getElementById("detail-panel").classList.remove("active");
+}
+
+renderProjects();
+renderSignals();
+</script>
+</body>
+</html>
