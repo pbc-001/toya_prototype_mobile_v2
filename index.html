@@ -127,7 +127,7 @@ body{font-family:var(--f);background:var(--bg);color:var(--t1);display:flex;flex
   background:var(--s2);
   border-left:3px solid;
   cursor:pointer;
-  transition:all .15s;
+  transition:all .2s;
   -webkit-touch-callout:none;
 }
 .signal:active{opacity:.8}
@@ -135,6 +135,20 @@ body{font-family:var(--f);background:var(--bg);color:var(--t1);display:flex;flex
 .signal.waiting{border-left-color:var(--amber);background:var(--amber-s)}
 .signal.ok{border-left-color:var(--sage);background:var(--sage-s)}
 .signal.info{border-left-color:var(--blue);background:var(--blue-s)}
+
+/* resolved state */
+.signal.resolved{
+  opacity:.38;
+  filter:grayscale(.7);
+  border-left-color:var(--t3) !important;
+  background:var(--s2) !important;
+  cursor:default;
+}
+.signal.resolved .signal-text{
+  text-decoration:line-through;
+  color:var(--t2);
+}
+.signal.resolved:active{opacity:.38}
 
 .signal-text{font-size:12.5px;line-height:1.5;color:var(--t1);margin-bottom:6px}
 .signal-tags{display:flex;gap:4px;flex-wrap:wrap}
@@ -155,6 +169,32 @@ body{font-family:var(--f);background:var(--bg);color:var(--t1);display:flex;flex
   font-size:10px;
   color:var(--t2);
   margin-top:6px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.signal-meta-left{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+
+/* resolve / restore button */
+.resolve-btn{
+  flex-shrink:0;
+  border:1px solid var(--sep);
+  background:#fff;
+  cursor:pointer;
+  font-size:10px;
+  font-weight:600;
+  color:var(--t3);
+  padding:2px 7px;
+  border-radius:10px;
+  transition:all .15s;
+  -webkit-touch-callout:none;
+  white-space:nowrap;
+  line-height:1.6;
+}
+.resolve-btn:active{opacity:.6}
+.resolve-btn.is-resolved{
+  color:var(--sage);
+  border-color:rgba(58,133,88,.3);
 }
 
 /* detail panel (slides up) */
@@ -450,6 +490,9 @@ const projects = [
 
 let activeProjectId = 1;
 
+// resolved state: key = "projectId-signalIndex"
+const resolved = new Set();
+
 function tagClass(label) {
   const map = {
     "待回覆": "tag-wait", "時間壓力": "tag-risk", "已確認": "tag-done",
@@ -458,6 +501,17 @@ function tagClass(label) {
     "進度正常": "tag-done", "保固案件": "tag-info", "已安排處理": "tag-done"
   };
   return map[label] || "tag-info";
+}
+
+function toggleResolve(projectId, signalIndex, e) {
+  e.stopPropagation();
+  const key = `${projectId}-${signalIndex}`;
+  if (resolved.has(key)) {
+    resolved.delete(key);
+  } else {
+    resolved.add(key);
+  }
+  renderSignals();
 }
 
 function renderProjects() {
@@ -478,14 +532,30 @@ function renderSignals() {
     return;
   }
 
-  el.innerHTML = project.signals.map(s => {
+  // sort: unresolved first, resolved last
+  const indexed = project.signals.map((s, i) => ({ s, i }));
+  indexed.sort((a, b) => {
+    const aR = resolved.has(`${project.id}-${a.i}`);
+    const bR = resolved.has(`${project.id}-${b.i}`);
+    return aR - bR;
+  });
+
+  el.innerHTML = indexed.map(({ s, i }) => {
+    const key = `${project.id}-${i}`;
+    const isResolved = resolved.has(key);
     const tagsHtml = s.tags.map(t => `<span class="tag ${tagClass(t)}">${t}</span>`).join("");
+    const btnLabel = isResolved ? "↩ 還原" : "✓ 已處理";
+    const btnClass = isResolved ? "resolve-btn is-resolved" : "resolve-btn";
+    const cardClick = isResolved ? "" : `onclick="openDetail(${project.id})"`;
     return `
-      <div class="signal ${s.type}" onclick="openDetail(${project.id})">
+      <div class="signal ${s.type}${isResolved ? ' resolved' : ''}" ${cardClick}>
         <div class="signal-text">${s.text}</div>
         <div class="signal-tags">${tagsHtml}</div>
         <div class="signal-meta">
-          <span class="tag tag-src">${s.source}</span> · ${s.time}
+          <div class="signal-meta-left">
+            <span class="tag tag-src">${s.source}</span> · ${s.time}
+          </div>
+          <button class="${btnClass}" onclick="toggleResolve(${project.id}, ${i}, event)">${btnLabel}</button>
         </div>
       </div>
     `;
